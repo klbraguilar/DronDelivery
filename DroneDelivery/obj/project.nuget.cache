@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "9Gsb7E5253Z4AebUe1ID9ZttK8nEhwDlDdptRduxzVNjRFlnKTLZOtpeILovKYpM49zKLBHR/hNFOlk3oPdo+A==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\k-a37\\source\\repos\\DroneDelivery\\DroneDelivery\\DroneDelivery.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\k-a37\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\5.0.12\\microsoft.netcore.app.host.win-x64.5.0.12.nupkg.sha512"
+  ],
+  "logs": []
+}
