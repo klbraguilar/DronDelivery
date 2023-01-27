@@ -10,8 +10,15 @@ namespace DroneDelivery
 {
     public class DeliveryService : IDeliveryService
     {
-        private readonly IDeliveryService deliveryService;
+        private readonly IDeliveryService _deliveryService;
+        private readonly Queue<DeliveryLocation> unassignedPackages;
 
+        public bool IsAvailable { get ; set ; }
+
+        public DeliveryService()
+        {
+            unassignedPackages = new Queue<DeliveryLocation>();
+        }
         public void SendPackage(DeliveryLocation location)
         {
             ReadFile();
@@ -35,7 +42,7 @@ namespace DroneDelivery
                         for (int j = 0; j < droneInfo.Length; j += 2)
                         {
                             drones.Add(new Drone
-                            (droneInfo[j].Trim(), int.Parse(droneInfo[j + 1].Trim()), deliveryService));
+                            (droneInfo[j].Trim(), int.Parse(droneInfo[j + 1].Trim()), _deliveryService));
                         }
                     }
                     else
@@ -44,43 +51,63 @@ namespace DroneDelivery
                         string[] locationInfo = line.Split(',');
                         string locationName = locationInfo[0].Trim();
                         int packageWeight = int.Parse(locationInfo[1].Trim());
-                        //Assign the location to the drone with the least weight
-                        int minIndex = 0;
-                        for (int k = 1; k < drones.Count; k++)
-                        {
-                            if (drones[k].CurrentWeight < drones[minIndex].CurrentWeight)
-                                minIndex = k;
-                        }
-                        drones[minIndex].CurrentWeight += packageWeight;
                         locations.Add(new DeliveryLocation(locationName, packageWeight));
                     }
                     i++;
                 }
             }
-            AssignDeliveries(drones, locations);
+            // sort the drones by maxWeight
+            drones = drones.OrderByDescending(x => x.MaxWeight).ToList();
+            // sort the packages by weight in descending order
+            locations = locations.OrderByDescending(x => x.PackageWeight).ToList();
+            // add the packages to the queue
+            foreach (var location in locations)
+            {
+                unassignedPackages.Enqueue(location);
+            }
+            // assign the packages to the drones
+            AssignDeliveries(drones);
         }
 
-        private void AssignDeliveries(List<Drone> drones, List<DeliveryLocation> locations)
+        private void AssignDeliveries(List<Drone> drones)
         {
-            // sort the locations based on weight
-            locations.Sort((x, y) => x.PackageWeight.CompareTo(y.PackageWeight));
-
             // assign locations to drones
             foreach (var drone in drones)
             {
-                int weight = 0;
-                foreach (var location in locations)
+                if (IsAvailable)
                 {
-                    if (weight + location.PackageWeight <= drone.MaxWeight)
+                    int weight = 0;
+                    while (weight <= drone.MaxWeight && unassignedPackages.Count > 0)
                     {
-                        drone.AddDelivery(location);
-                        weight += location.PackageWeight;
+                        var location = unassignedPackages.Dequeue();
+                        if (weight + location.PackageWeight <= drone.MaxWeight)
+                        {
+                            drone.AddDelivery(location);
+                            weight += location.PackageWeight;
+                        }
                     }
+                    IsAvailable = false;
+                    SendDeliveries(drone, drones.IndexOf(drone));
                 }
             }
         }
 
-        
+        public void SendDeliveries(Drone droneWithDeliveries, int droneNumber)
+        {
+            using (StreamWriter writer = new StreamWriter("output.txt", true))
+            {
+                int tripNumber = 1;
+                foreach (var trip in droneWithDeliveries.Deliveries)
+                {
+                    writer.WriteLine("[Drone #" + droneNumber + droneWithDeliveries.Name + "]");
+                    writer.WriteLine("[Trip #" + tripNumber + "]");
+                    writer.Write("[Location #" + trip.Name + "], ");
+                    writer.WriteLine();
+                    tripNumber++;
+                }
+                IsAvailable = true;
+            }
+        }
     }
 }
 

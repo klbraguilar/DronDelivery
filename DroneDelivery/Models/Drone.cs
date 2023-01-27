@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DroneDelivery.Models
 {
-    class Drone
+    public class Drone
     {
         private readonly IDeliveryService _deliveryService;
 
